@@ -24,4 +24,8 @@ while (true) {
     $request = socket_read($client, 1024);
     echo "📥 Received Request:\n$request\n";
 
+    $response = "HTTP/1.1 200 OK\r\n";
+    $response .= "Content-Type: text/html\r\n\r\n";
+    $response .= "<h1>Hello from PHP Server!</h1>";
+
     

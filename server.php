@@ -21,4 +21,7 @@ while (true) {
     $client = socket_accept($sock);
     if ($client === false) continue;
 
+    $request = socket_read($client, 1024);
+    echo "📥 Received Request:\n$request\n";
+
     

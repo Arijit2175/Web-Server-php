@@ -2,3 +2,8 @@
 $host = 'Localhost';
 $port = 8080;
 
+$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+if ($sock === false) {
+    die("Error: socket_create() failed - " . socket_strerror(socket_last_error()) . "\n");
+}
+

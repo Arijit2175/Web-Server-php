@@ -28,4 +28,10 @@ while (true) {
     $response .= "Content-Type: text/html\r\n\r\n";
     $response .= "<h1>Hello from PHP Server!</h1>";
 
-    
+    socket_write($client, $response);
+
+    socket_close($client);
+}
+
+socket_close($sock);
+?>

@@ -15,3 +15,5 @@ if (!socket_listen($sock)) {
     die("Error: socket_listen() failed - " . socket_strerror(socket_last_error($sock)) . "\n");
 }
 
+echo "✅ PHP Web Server running at http://$host:$port\n";
+

@@ -19,17 +19,33 @@ echo "✅ PHP Web Server running at http://$host:$port\n";
 
 while (true) {
     $client = socket_accept($sock);
-    if ($client === false) continue;
-
     $request = socket_read($client, 1024);
-    echo "📥 Received Request:\n$request\n";
 
-    $response = "HTTP/1.1 200 OK\r\n";
+    echo "📥 Request:\n$request\n";
+
+    $lines = explode("\r\n", $request);
+    $requestLine = $lines[0];
+    $parts = explode(' ', $requestLine);
+    
+    $method = $parts[0];
+    $path = $parts[1];
+
+    if ($path == "/") {
+        $body = "<h1>Welcome to Home Page</h1>";
+        $status = "200 OK";
+    } elseif ($path == "/about") {
+        $body = "<h1>About Us</h1>";
+        $status = "200 OK";
+    } else {
+        $body = "<h1>404 Not Found</h1>";
+        $status = "404 Not Found";
+    }
+
+    $response = "HTTP/1.1 $status\r\n";
     $response .= "Content-Type: text/html\r\n\r\n";
-    $response .= "<h1>Hello from PHP Server!</h1>";
+    $response .= $body;
 
     socket_write($client, $response);
-
     socket_close($client);
 }
 

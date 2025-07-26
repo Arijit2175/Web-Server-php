@@ -17,3 +17,8 @@ if (!socket_listen($sock)) {
 
 echo "✅ PHP Web Server running at http://$host:$port\n";
 
+while (true) {
+    $client = socket_accept($sock);
+    if ($client === false) continue;
+
+    

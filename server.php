@@ -7,3 +7,7 @@ if ($sock === false) {
     die("Error: socket_create() failed - " . socket_strerror(socket_last_error()) . "\n");
 }
 
+if (!socket_bind($sock, $host, $port)) {
+    die("Error: socket_bind() failed - " . socket_strerror(socket_last_error($sock)) . "\n");
+}
+

@@ -19,7 +19,7 @@ echo "✅ PHP Web Server running at http://$host:$port\n";
 
 while (true) {
     $client = socket_accept($sock);
-    $request = socket_read($client, 1024);
+    $request = socket_read($client, 2048); 
     $lines = explode("\r\n", $request);
     $requestLine = $lines[0];
     $parts = explode(' ', $requestLine);
@@ -27,29 +27,47 @@ while (true) {
     $method = $parts[0];
     $path = urldecode($parts[1]);
 
-    if ($path == "/") {
-        $path = "/index.html";
+    $responseBody = "";
+    $status = "200 OK";
+    $mimeType = "text/html";
+
+    if ($method == "POST" && $path == "/submit") {
+        $contentLength = 0;
+        foreach ($lines as $line) {
+            if (stripos($line, "Content-Length:") === 0) {
+                $contentLength = (int)trim(explode(":", $line)[1]);
+                break;
+            }
+        }
+
+        $bodyPos = strpos($request, "\r\n\r\n");
+        $postData = substr($request, $bodyPos + 4, $contentLength);
+
+        parse_str($postData, $formData);
+
+        $name = htmlspecialchars($formData['name'] ?? 'Guest');
+        $responseBody = "<h1>Hello, $name! (POST received)</h1>";
     }
-
-    $filePath = __DIR__ . "/public" . $path;
-
-    if (is_file($filePath)) {
-        $body = file_get_contents($filePath);
-        $mimeType = mime_content_type($filePath);
-        $status = "200 OK";
+    elseif ($method == "GET" && $path == "/") {
+        $responseBody = '
+            <form method="POST" action="/submit">
+                <input type="text" name="name" placeholder="Enter your name">
+                <button type="submit">Submit</button>
+            </form>';
     } else {
-        $body = "<h1>404 Not Found</h1>";
-        $mimeType = "text/html";
+        $responseBody = "<h1>404 Not Found</h1>";
         $status = "404 Not Found";
     }
 
     $response = "HTTP/1.1 $status\r\n";
-    $response .= "Content-Type: $mimeType\r\n\r\n";
-    $response .= $body;
+    $response .= "Content-Type: $mimeType\r\n";
+    $response .= "Content-Length: " . strlen($responseBody) . "\r\n\r\n";
+    $response .= $responseBody;
 
     socket_write($client, $response);
     socket_close($client);
 }
+
 
 socket_close($sock);
 ?>

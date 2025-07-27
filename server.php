@@ -20,29 +20,31 @@ echo "✅ PHP Web Server running at http://$host:$port\n";
 while (true) {
     $client = socket_accept($sock);
     $request = socket_read($client, 1024);
-
-    echo "📥 Request:\n$request\n";
-
     $lines = explode("\r\n", $request);
     $requestLine = $lines[0];
     $parts = explode(' ', $requestLine);
-    
+
     $method = $parts[0];
-    $path = $parts[1];
+    $path = urldecode($parts[1]);
 
     if ($path == "/") {
-        $body = "<h1>Welcome to Home Page</h1>";
-        $status = "200 OK";
-    } elseif ($path == "/about") {
-        $body = "<h1>About Us</h1>";
+        $path = "/index.html";
+    }
+
+    $filePath = __DIR__ . "/public" . $path;
+
+    if (is_file($filePath)) {
+        $body = file_get_contents($filePath);
+        $mimeType = mime_content_type($filePath);
         $status = "200 OK";
     } else {
         $body = "<h1>404 Not Found</h1>";
+        $mimeType = "text/html";
         $status = "404 Not Found";
     }
 
     $response = "HTTP/1.1 $status\r\n";
-    $response .= "Content-Type: text/html\r\n\r\n";
+    $response .= "Content-Type: $mimeType\r\n\r\n";
     $response .= $body;
 
     socket_write($client, $response);

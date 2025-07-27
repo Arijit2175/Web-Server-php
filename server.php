@@ -64,6 +64,7 @@ while (true) {
         $responseBody = "<h1>404 Not Found</h1>";
         $status = "404 Not Found";
     }
+}
 
     $response = "HTTP/1.1 $status\r\n";
     $response .= "Content-Type: $mimeType\r\n";

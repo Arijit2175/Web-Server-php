@@ -55,6 +55,12 @@ while (true) {
                 <button type="submit">Submit</button>
             </form>';
     } else {
+        $filePath = __DIR__ . "/public" . ($path == "/" ? "/index.html" : $path);
+
+    if (is_file($filePath)) {
+        $responseBody = file_get_contents($filePath);
+        $mimeType = mime_content_type($filePath);
+    } else {
         $responseBody = "<h1>404 Not Found</h1>";
         $status = "404 Not Found";
     }

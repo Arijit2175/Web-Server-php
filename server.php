@@ -54,7 +54,12 @@ while (true) {
 
 socket_close($sock);
 
-
+function render($view, $vars = []) {
+    extract($vars); 
+    ob_start();
+    include __DIR__ . "/views/$view.php";
+    return ob_get_clean();
+}
 
 function handleHome($method, $path, $request, $lines) {
     return '

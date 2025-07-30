@@ -62,13 +62,7 @@ function render($view, $vars = []) {
 }
 
 function handleHome($method, $path, $request, $lines) {
-    return '
-        <h1>Welcome to PHP Web Server</h1>
-        <p><a href="/about">About</a></p>
-        <form method="POST" action="/submit">
-            <input type="text" name="name" placeholder="Enter your name">
-            <button type="submit">Submit</button>
-        </form>';
+    return render("home");
 }
 
 function handleSubmit($method, $path, $request, $lines) {
@@ -79,15 +73,16 @@ function handleSubmit($method, $path, $request, $lines) {
             break;
         }
     }
+
     $bodyPos = strpos($request, "\r\n\r\n");
     $postData = substr($request, $bodyPos + 4, $contentLength);
     parse_str($postData, $formData);
+    $name = $formData['name'] ?? 'Guest';
 
-    $name = htmlspecialchars($formData['name'] ?? 'Guest');
-    return "<h1>Hello, $name! (POST received)</h1><p><a href='/'>Back</a></p>";
+    return render("submit", ['name' => $name]);
 }
 
 function handleAboutPage($method, $path, $request, $lines) {
-    return "<h1>About This Server</h1><p>Built in pure PHP using sockets.</p><p><a href='/'>Home</a></p>";
+    return render("about");
 }
 ?>

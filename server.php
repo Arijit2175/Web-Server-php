@@ -19,10 +19,11 @@ while (true) {
     $request = socket_read($client, 4096);
 
     $lines = explode("\r\n", $request);
-    $requestLine = $lines[0];
+    $requestLine = $lines[0] ?? '';
     $parts = explode(' ', $requestLine);
     $method = $parts[0] ?? '';
     $path = urldecode($parts[1] ?? '/');
+
     $routeKey = "$method $path";
 
     $status = "200 OK";
@@ -33,10 +34,14 @@ while (true) {
         $handler = $routes[$routeKey];
         $responseBody = $handler($method, $path, $request, $lines);
     } else {
-        $filePath = __DIR__ . "/public" . ($path == "/" ? "/index.html" : $path);
-        if (is_file($filePath)) {
-            $responseBody = file_get_contents($filePath);
-            $mimeType = mime_content_type($filePath);
+        $publicDir = realpath(__DIR__ . "/public");
+        $requestedPath = $path === "/" ? "/index.html" : $path;
+
+        $fullPath = realpath($publicDir . $requestedPath);
+
+        if ($fullPath !== false && strpos($fullPath, $publicDir) === 0 && is_file($fullPath)) {
+            $responseBody = file_get_contents($fullPath);
+            $mimeType = mime_content_type($fullPath);
         } else {
             $status = "404 Not Found";
             $responseBody = "<h1>404 Not Found</h1>";
@@ -54,8 +59,9 @@ while (true) {
 
 socket_close($sock);
 
+
 function render($view, $vars = []) {
-    extract($vars); 
+    extract($vars);
     ob_start();
     include __DIR__ . "/views/$view.php";
     return ob_get_clean();

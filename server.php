@@ -8,6 +8,12 @@ socket_listen($sock);
 
 echo "✅ PHP Web Server running at http://$host:$port\n";
 
+$logDir = __DIR__ . '/logs';
+if (!is_dir($logDir)) {
+    mkdir($logDir);
+}
+$logFile = $logDir . '/server.log';
+
 $routes = [
     "GET /" => "handleHome",
     "POST /submit" => "handleSubmit",
@@ -36,7 +42,6 @@ while (true) {
     } else {
         $publicDir = realpath(__DIR__ . "/public");
         $requestedPath = $path === "/" ? "/index.html" : $path;
-
         $fullPath = realpath($publicDir . $requestedPath);
 
         if ($fullPath !== false && strpos($fullPath, $publicDir) === 0 && is_file($fullPath)) {
@@ -53,6 +58,9 @@ while (true) {
     $response .= "Content-Length: " . strlen($responseBody) . "\r\n\r\n";
     $response .= $responseBody;
 
+    socket_getpeername($client, $clientIp);
+    logRequest($clientIp, $method, $path, explode(' ', $status)[0], $logFile);
+
     socket_write($client, $response);
     socket_close($client);
 }
@@ -66,6 +74,7 @@ function render($view, $vars = []) {
     include __DIR__ . "/views/$view.php";
     return ob_get_clean();
 }
+
 
 function handleHome($method, $path, $request, $lines) {
     return render("home");
@@ -90,5 +99,13 @@ function handleSubmit($method, $path, $request, $lines) {
 
 function handleAboutPage($method, $path, $request, $lines) {
     return render("about");
+}
+
+
+function logRequest($clientIp, $method, $path, $statusCode, $logFile) {
+    $timestamp = date("Y-m-d H:i:s");
+    $logLine = "[$timestamp] $clientIp \"$method $path\" $statusCode\n";
+    echo $logLine; 
+    file_put_contents($logFile, $logLine, FILE_APPEND);
 }
 ?>

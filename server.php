@@ -26,36 +26,35 @@ while (true) {
                 socket_set_nonblock($client);
                 $clients[] = $client;
             } else {
-                $data = @socket_read($sock, 2048, PHP_NORMAL_READ);
-                if ($data === false) {
-                    $index = array_search($sock, $clients);
-                    socket_close($sock);
-                    unset($clients[$index]);
-                    continue;
-                }
+                $data = @socket_read($sock, 2048);
+if ($data === false || $data === '') {
+    $index = array_search($sock, $clients);
+    socket_close($sock);
+    unset($clients[$index]);
+    continue;
+}
 
-                $requestLine = trim($data);
-                if ($requestLine !== '') {
-                    $parts = explode(' ', $requestLine);
-                    $method = $parts[0] ?? '';
-                    $path = urldecode($parts[1] ?? '/');
+$lines = explode("\r\n", $data);
+$requestLine = $lines[0];
+$parts = explode(' ', $requestLine);
+$method = $parts[0] ?? '';
+$path = urldecode($parts[1] ?? '/');
 
-                    $responseBody = "<h1>Simple PHP Server</h1><p>You requested: $path</p>";
-                    $status = "200 OK";
-                    $mimeType = "text/html";
+$responseBody = "<h1>Simple PHP Server</h1><p>You requested: $path</p>";
+$status = "200 OK";
+$mimeType = "text/html";
 
-                    $response = "HTTP/1.1 $status\r\n";
-                    $response .= "Content-Type: $mimeType\r\n";
-                    $response .= "Content-Length: " . strlen($responseBody) . "\r\n\r\n";
-                    $response .= $responseBody;
+$response = "HTTP/1.1 $status\r\n";
+$response .= "Content-Type: $mimeType\r\n";
+$response .= "Content-Length: " . strlen($responseBody) . "\r\n\r\n";
+$response .= $responseBody;
 
-                    socket_write($sock, $response);
-                    socket_close($sock);
-                    $index = array_search($sock, $clients);
-                    unset($clients[$index]);
+socket_write($sock, $response);
+socket_close($sock);
+$index = array_search($sock, $clients);
+unset($clients[$index]);
                 }
             }
         }
     }
-}
 ?>

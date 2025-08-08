@@ -21,7 +21,7 @@
     <hr>
 
     <h2>Upload Image</h2>
-    <form action="/upload" method="POST" enctype="multipart/form-data">
+    <form action="/uploads" method="POST" enctype="multipart/form-data">
         <input type="file" name="file" accept=".jpg,.jpeg,.png,.gif">
         <button type="submit">Upload</button>
     </form>

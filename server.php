@@ -21,6 +21,8 @@ $routes = [
     "POST /submit" => "handleSubmit"
 ];
 
+$allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif'];
+
 while (true) {
     $readSockets = $clients;
     $readSockets[] = $masterSock;

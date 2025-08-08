@@ -13,12 +13,8 @@ $logDir = __DIR__ . '/logs';
 if (!is_dir($logDir)) mkdir($logDir);
 $logFile = $logDir . '/server.log';
 
-$publicDir = realpath(__DIR__ . "/public");
-
 $uploadDir = __DIR__ . '/uploads';
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-$allowedUploadExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
-$maxUploadSize = 2 * 1024 * 1024; 
 
 $clients = [];
 
@@ -29,7 +25,7 @@ $routes = [
     "POST /upload" => "handleFileUpload"
 ];
 
-$allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'txt'];
+$allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif'];
 
 while (true) {
     $readSockets = $clients;
@@ -68,6 +64,7 @@ while (true) {
                     $handler = $routes[$routeKey];
                     $responseBody = $handler($method, $path, $data, $lines);
                 } else {
+                    $publicDir = realpath(__DIR__ . "/public");
                     $requestedPath = $path === "/" ? "/index.html" : $path;
                     $fullPath = realpath($publicDir . $requestedPath);
 
@@ -129,44 +126,54 @@ function handleSubmit($method, $path, $request, $lines) {
     $bodyPos = strpos($request, "\r\n\r\n");
     $postData = substr($request, $bodyPos + 4, $contentLength);
     parse_str($postData, $formData);
-    $name = htmlspecialchars($formData['name'] ?? 'Guest');
+    $name = htmlspecialchars($formData['name'] ?? 'Guest'); 
     return render("submit", ['name' => $name]);
 }
 
 function handleFileUpload($method, $path, $request, $lines) {
-    global $uploadDir, $allowedUploadExtensions, $maxUploadSize;
+    global $uploadDir;
 
+    $contentType = '';
     $contentLength = 0;
     foreach ($lines as $line) {
+        if (stripos($line, "Content-Type:") === 0 && stripos($line, "multipart/form-data") !== false) {
+            $contentType = trim(substr($line, 13));
+        }
         if (stripos($line, "Content-Length:") === 0) {
-            $contentLength = (int)trim(explode(":", $line)[1]);
-            break;
+            $contentLength = (int)trim(substr($line, 15));
         }
     }
-    if ($contentLength > $maxUploadSize) {
-        return "<h1>File too large. Max 2MB allowed.</h1>";
-    }
 
-    $bodyPos = strpos($request, "\r\n\r\n");
-    $rawBody = substr($request, $bodyPos + 4);
+    if (preg_match('/boundary=(.*)$/', $contentType, $matches)) {
+        $boundary = trim($matches[1]);
+        $bodyPos = strpos($request, "\r\n\r\n");
+        $body = substr($request, $bodyPos + 4, $contentLength);
 
-    if (preg_match('/filename="([^"]+)"/', $request, $matches)) {
-        $originalName = basename($matches[1]);
-        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $parts = explode("--" . $boundary, $body);
+        foreach ($parts as $part) {
+            if (strpos($part, 'Content-Disposition: form-data;') !== false) {
+                if (preg_match('/name="file"; filename="(.+?)"/', $part, $fileMatches)) {
+                    $filename = basename($fileMatches[1]);
+                    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-        if (!in_array($ext, $allowedUploadExtensions)) {
-            return "<h1>403 Forbidden - File type not allowed</h1>";
+                    if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                        return "<h1>❌ File type not allowed!</h1>";
+                    }
+
+                    $fileDataStart = strpos($part, "\r\n\r\n") + 4;
+                    $fileData = substr($part, $fileDataStart);
+                    $fileData = rtrim($fileData, "\r\n");
+
+                    $safeName = uniqid("img_", true) . "." . $ext;
+                    file_put_contents($uploadDir . "/" . $safeName, $fileData);
+
+                    return "<h1>✅ File uploaded successfully!</h1><p>Saved as: uploads/$safeName</p>";
+                }
+            }
         }
-
-        $newName = uniqid("file_", true) . "." . $ext;
-        $filePath = $uploadDir . "/" . $newName;
-
-        file_put_contents($filePath, $rawBody);
-
-        return "<h1>Upload successful!</h1><p>Saved as: $newName</p>";
     }
 
-    return "<h1>Invalid upload request</h1>";
+    return "<h1>❌ No file uploaded or invalid request</h1>";
 }
 
 function logRequest($clientIp, $method, $path, $statusCode, $logFile) {

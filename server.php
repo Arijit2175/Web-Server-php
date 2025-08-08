@@ -156,7 +156,29 @@ function handleSubmit($method, $path, $request, $lines) {
 
 function handleFileUpload($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $contentLength = 0;
+    foreach ($lines as $line) {
+        if (stripos($line, "Content-Length:") === 0) {
+            $contentLength = (int)trim(substr($line, 15));
+            break;
+        }
+    }
+
+    $bodyPos = strpos($request, "\r\n\r\n");
+    $body = substr($request, $bodyPos + 4);
+
+    $currentLength = strlen($body);
+    global $sock; 
+    while ($currentLength < $contentLength) {
+        $chunk = socket_read($sock, $contentLength - $currentLength);
+        if ($chunk === false || $chunk === '') break;
+        $body .= $chunk;
+        $currentLength = strlen($body);
+    }
 
     $boundary = "";
     foreach ($lines as $line) {
@@ -172,21 +194,17 @@ function handleFileUpload($method, $path, $request, $lines) {
         return "<h1>Error: No boundary found</h1>";
     }
 
-    $bodyPos = strpos($request, "\r\n\r\n");
-    $body = substr($request, $bodyPos + 4);
-
     $parts = explode("--$boundary", $body);
-
     foreach ($parts as $part) {
         if (strpos($part, 'Content-Disposition: form-data;') !== false &&
             strpos($part, 'filename="') !== false) {
 
             preg_match('/filename="([^"]+)"/', $part, $matches);
             $filename = $matches[1] ?? '';
+
             if ($filename) {
                 $fileStart = strpos($part, "\r\n\r\n") + 4;
-                $fileData = substr($part, $fileStart);
-                $fileData = rtrim($fileData, "\r\n");
+                $fileData = substr($part, $fileStart, -2);
 
                 $safeName = uniqid() . "_" . basename($filename);
                 file_put_contents("$uploadDir/$safeName", $fileData);
@@ -195,8 +213,10 @@ function handleFileUpload($method, $path, $request, $lines) {
             }
         }
     }
+
     return "<h1>No file uploaded</h1>";
 }
+
 
 function logRequest($clientIp, $method, $path, $statusCode, $logFile) {
     $timestamp = date("Y-m-d H:i:s");

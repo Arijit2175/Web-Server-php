@@ -65,8 +65,15 @@ while (true) {
                     $fullPath = realpath($publicDir . $requestedPath);
 
                     if ($fullPath !== false && strpos($fullPath, $publicDir) === 0 && is_file($fullPath)) {
-                        $responseBody = file_get_contents($fullPath);
-                        $mimeType = mime_content_type($fullPath);
+
+                        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                        if (in_array($ext, $allowedExtensions)) {
+                            $responseBody = file_get_contents($fullPath);
+                            $mimeType = mime_content_type($fullPath);
+                        } else {
+                            $status = "403 Forbidden";
+                            $responseBody = "<h1>403 Forbidden</h1>";
+                        }
                     } else {
                         $status = "404 Not Found";
                         $responseBody = "<h1>404 Not Found</h1>";

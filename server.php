@@ -124,6 +124,7 @@ function handleSubmit($method, $path, $request, $lines) {
     $postData = substr($request, $bodyPos + 4, $contentLength);
     parse_str($postData, $formData);
     $name = $formData['name'] ?? 'Guest';
+    $name = htmlspecialchars($formData['name'] ?? 'Guest'); 
     return render("submit", ['name' => $name]);
 }
 

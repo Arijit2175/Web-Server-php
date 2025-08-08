@@ -21,7 +21,7 @@ $routes = [
     "POST /submit" => "handleSubmit"
 ];
 
-$allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif'];
+$allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'txt'];
 
 while (true) {
     $readSockets = $clients;

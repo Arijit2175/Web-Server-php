@@ -20,10 +20,9 @@
 
     <hr>
 
-    <h2>Safe File Upload</h2>
+    <h2>Upload Image</h2>
     <form action="/upload" method="POST" enctype="multipart/form-data">
-        <label>Select file (JPG, PNG, GIF, PDF, Max 2MB):</label>
-        <input type="file" name="file" required>
+        <input type="file" name="file" accept=".jpg,.jpeg,.png,.gif">
         <button type="submit">Upload</button>
     </form>
 

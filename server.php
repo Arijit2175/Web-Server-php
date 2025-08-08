@@ -41,8 +41,32 @@ while (true) {
                 socket_set_nonblock($client);
                 $clients[] = $client;
             } else {
-                $data = @socket_read($sock, 4096);
-                if ($data === false || $data === '') {
+                $data = '';
+                while (true) {
+                    $chunk = @socket_read($sock, 4096);
+                    if ($chunk === false || $chunk === '') break;
+                    $data .= $chunk;
+
+                    if (strpos($data, "\r\n\r\n") !== false) {
+                        $headersEnd = strpos($data, "\r\n\r\n") + 4;
+                        $headers = substr($data, 0, $headersEnd);
+
+                        if (preg_match('/Content-Length:\s*(\d+)/i', $headers, $matches)) {
+                            $contentLength = (int)$matches[1];
+                            $bodyLength = strlen($data) - $headersEnd;
+
+                            while ($bodyLength < $contentLength) {
+                                $chunk = @socket_read($sock, 4096);
+                                if ($chunk === false || $chunk === '') break;
+                                $data .= $chunk;
+                                $bodyLength = strlen($data) - $headersEnd;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (empty($data)) {
                     $index = array_search($sock, $clients);
                     socket_close($sock);
                     unset($clients[$index]);
@@ -132,20 +156,7 @@ function handleSubmit($method, $path, $request, $lines) {
 
 function handleFileUpload($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
-    }
-
-    $contentLength = 0;
-    foreach ($lines as $line) {
-        if (stripos($line, "Content-Length:") === 0) {
-            $contentLength = (int)trim(substr($line, 15));
-            break;
-        }
-    }
-
-    $bodyPos = strpos($request, "\r\n\r\n");
-    $body = substr($request, $bodyPos + 4);
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
     $boundary = "";
     foreach ($lines as $line) {
@@ -157,10 +168,12 @@ function handleFileUpload($method, $path, $request, $lines) {
             break;
         }
     }
-
     if (!$boundary) {
         return "<h1>Error: No boundary found</h1>";
     }
+
+    $bodyPos = strpos($request, "\r\n\r\n");
+    $body = substr($request, $bodyPos + 4);
 
     $parts = explode("--$boundary", $body);
 
@@ -170,11 +183,9 @@ function handleFileUpload($method, $path, $request, $lines) {
 
             preg_match('/filename="([^"]+)"/', $part, $matches);
             $filename = $matches[1] ?? '';
-
             if ($filename) {
                 $fileStart = strpos($part, "\r\n\r\n") + 4;
                 $fileData = substr($part, $fileStart);
-
                 $fileData = rtrim($fileData, "\r\n");
 
                 $safeName = uniqid() . "_" . basename($filename);
@@ -184,7 +195,6 @@ function handleFileUpload($method, $path, $request, $lines) {
             }
         }
     }
-
     return "<h1>No file uploaded</h1>";
 }
 

@@ -19,6 +19,7 @@ Supports static file serving, custom routes, file uploads, and downloads.
 
 ## 📂 Project Structure
 
+```
 root/
 │
 ├── server.php # Main server script
@@ -35,6 +36,7 @@ root/
 └── logs/ # Server logs (auto-created)
       │
       ├── server.log
+```
 
 ---
 

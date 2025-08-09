@@ -109,3 +109,16 @@ http://127.0.0.1:8080
 
 ---
 
+## 📚 References
+- [PHP Manual – Sockets](https://www.php.net/manual/en/book.sockets.php)  
+- [RFC 2616 – HTTP/1.1 Specification](https://www.rfc-editor.org/rfc/rfc2616)  
+- [MIME Types List](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types)  
+- [OWASP File Upload Security Guidelines](https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload)  
+- [PHP File Upload Docs](https://www.php.net/manual/en/features.file-upload.php)  
+- [Non-blocking Sockets in PHP](https://www.php.net/manual/en/function.socket-set-nonblock.php)  
+
+---
+
+<br>
+
+👨‍💻 **Developed by** - @Arijit2175

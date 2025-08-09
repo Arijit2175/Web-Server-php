@@ -87,7 +87,7 @@ while (true) {
 
                 if (isset($routes[$routeKey])) {
                     $handler = $routes[$routeKey];
-                    $responseBody = $handler($method, $path, $data, $lines);
+                    $responseBody = $handler($method, $path, $data, $lines, $sock);
                 } else {
                     if (strpos($path, "/uploads/") === 0) {
                         $filePath = realpath($uploadDir . substr($path, 8));
@@ -183,7 +183,7 @@ function handleSubmit($method, $path, $request, $lines) {
     return render("submit", ['name' => $name]);
 }
 
-function handleUpload($method, $path, $request, $lines) {
+function handleUpload($method, $path, $request, $lines, $sock) {
     $uploadDir = __DIR__ . '/uploads';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);

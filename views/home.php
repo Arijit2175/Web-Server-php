@@ -26,25 +26,7 @@
         <button type="submit">Upload</button>
     </form>
 
-    <h2>📂 Uploaded Files</h2>
-    <ul>
-        <?php
-        $uploadDir = __DIR__ . '/uploads';
-        if (is_dir($uploadDir)) {
-            $files = scandir($uploadDir);
-            foreach ($files as $file) {
-                if ($file !== '.' && $file !== '..') {
-                    if (preg_match('/^(.+?)_\d{8}_\d{6}_[a-f0-9]{8,}\.(.+)$/', $file, $matches)) {
-                        $displayName = $matches[1] . '.' . $matches[2];
-                    } else {
-                        $displayName = $file; 
-                    }
-                    echo "<li><a href='/uploads/$file' download>$displayName</a></li>";
-                }
-            }
-        }
-        ?>
-    </ul>
+    <p><a href="/uploads">📂 View Uploaded Files</a></p>
 
     <hr>
 

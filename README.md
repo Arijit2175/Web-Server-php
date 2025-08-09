@@ -17,3 +17,24 @@ Supports static file serving, custom routes, file uploads, and downloads.
 
 ---
 
+## 📂 Project Structure
+
+root/
+│
+├── server.php # Main server script
+├── public/ # Public static files 
+      │
+      ├── index.html
+      ├──styles.css
+├── views/ # PHP templates for dynamic pages
+      │
+      ├── home.php
+      ├── about.php
+      ├── submit.php
+├── uploads/ # Uploaded files (auto-created)
+└── logs/ # Server logs (auto-created)
+      │
+      ├── server.log
+
+---
+

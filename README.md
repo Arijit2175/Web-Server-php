@@ -83,3 +83,11 @@ http://127.0.0.1:8080
 
 ---
 
+## 🛡 Security
+
+- Only serves allowed file extensions (html, css, js, png, jpg, jpeg, gif, txt)
+- Prevents directory traversal attacks
+- Upload/download paths restricted to project folders
+
+---
+

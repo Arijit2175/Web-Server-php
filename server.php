@@ -218,7 +218,11 @@ function handleUpload($method, $path, $request, $lines) {
                 $fileStart = strpos($part, "\r\n\r\n") + 4;
                 $fileData = substr($part, $fileStart, -2); 
 
-                $safeName = uniqid() . "_" . basename($filename);
+                $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', basename($filename));
+                if (strlen($fileData) > 5 * 1024 * 1024) {
+                return "<h1>Error: File too large (max 5MB)</h1>";
+            }
+                $safeName = uniqid() . "_" . $cleanName;
                 file_put_contents("$uploadDir/$safeName", $fileData);
 
                 return "<h1>File uploaded successfully!</h1><p>Saved as: $safeName</p>";

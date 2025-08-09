@@ -91,3 +91,13 @@ http://127.0.0.1:8080
 
 ---
 
+## 📜 Logging
+
+- Every request is logged to logs/server.log:
+
+```
+[YYYY-MM-DD HH:MM:SS] <client_ip> "<METHOD> <PATH>" <STATUS_CODE>
+```
+
+---
+

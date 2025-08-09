@@ -1,14 +1,14 @@
 <?php
 $host = '127.0.0.1';
 $port = 8080;
-
+// Create a TCP/IP socket
 $masterSock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 socket_bind($masterSock, $host, $port);
 socket_listen($masterSock);
 socket_set_nonblock($masterSock);
 
 echo "✅ Multi-Client PHP Web Server running at http://$host:$port\n";
-
+// Create directories for uploads and logs if they don't exist
 $logDir = __DIR__ . '/logs';
 if (!is_dir($logDir)) mkdir($logDir);
 $logFile = $logDir . '/server.log';
@@ -17,7 +17,7 @@ $uploadDir = __DIR__ . '/uploads';
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
 $clients = [];
-
+// Define routes
 $routes = [
     "GET /" => "handleHome",
     "GET /about" => "handleAboutPage",
@@ -27,7 +27,7 @@ $routes = [
 ];
 
 $allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'txt'];
-
+// Main server loop
 while (true) {
     $readSockets = $clients;
     $readSockets[] = $masterSock;
@@ -90,8 +90,7 @@ while (true) {
                     $responseBody = $handler($method, $path, $data, $lines, $sock);
                 } else {
                     if (strpos($path, "/uploads/") === 0) {
-    // Extract just the filename part (avoid directory traversal)
-    $fileName = basename(substr($path, 9)); // 9 skips "/uploads/"
+    $fileName = basename(substr($path, 9)); 
     $filePath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
 
     if (is_file($filePath)) {
@@ -154,22 +153,22 @@ while (true) {
         }
     }
 }
-
+// Function to render views
 function render($view, $vars = []) {
     extract($vars);
     ob_start();
     include __DIR__ . "/views/$view.php";
     return ob_get_clean();
 }
-
+// Route handlers
 function handleHome($method, $path, $request, $lines) {
     return render("home");
 }
-
+// Function to handle the About page
 function handleAboutPage($method, $path, $request, $lines) {
     return render("about");
 }
-
+// Function to handle form submission
 function handleSubmit($method, $path, $request, $lines) {
     $contentLength = 0;
     foreach ($lines as $line) {
@@ -184,7 +183,7 @@ function handleSubmit($method, $path, $request, $lines) {
     $name = htmlspecialchars($formData['name'] ?? 'Guest'); 
     return render("submit", ['name' => $name]);
 }
-
+// Function to handle file uploads
 function handleUpload($method, $path, $request, $lines, $sock) {
     $uploadDir = __DIR__ . '/uploads';
     if (!is_dir($uploadDir)) {
@@ -264,7 +263,7 @@ function handleUpload($method, $path, $request, $lines, $sock) {
 
     return "<h1>No file uploaded</h1>";
 }
-
+// Function to handle listing uploaded files
 function handleUploadsList($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';
     if (!is_dir($uploadDir)) {
@@ -278,7 +277,7 @@ function handleUploadsList($method, $path, $request, $lines) {
     $html .= "</ul>";
     return $html;
 }
-
+// Function to log requests
 function logRequest($clientIp, $method, $path, $statusCode, $logFile) {
     $timestamp = date("Y-m-d H:i:s");
     $logLine = "[$timestamp] $clientIp \"$method $path\" $statusCode\n";

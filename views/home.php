@@ -26,6 +26,8 @@
         <button type="submit">Upload</button>
     </form>
 
+    <p><a href="/uploads">📂 View Uploaded Files</a></p>
+
     <hr>
 
     <a href="/about">About Page</a>

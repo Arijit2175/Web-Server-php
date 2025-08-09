@@ -38,3 +38,40 @@ root/
 
 ---
 
+## 🚀 Workflow
+
+### Requirements
+
+- PHP **7.4+** with `sockets` extension enabled  
+- CLI access to run the server
+- If not present, enable it in **php.ini**.
+Check if sockets are enabled:
+```
+php -m | grep sockets
+```
+
+### Run the Server
+
+```
+php server.php
+```
+
+By default it starts at:
+
+```
+http://127.0.0.1:8080
+```
+
+### Routes
+
+| Method | Path                  | Description            |
+| ------ | --------------------- | ---------------------- |
+| GET    | `/`                   | Home page              |
+| GET    | `/about`              | About page             |
+| POST   | `/submit`             | Simple form submission |
+| POST   | `/upload`             | File upload endpoint   |
+| GET    | `/uploads`            | List of uploaded files |
+| GET    | `/uploads/{filename}` | Download a file        |
+
+---
+

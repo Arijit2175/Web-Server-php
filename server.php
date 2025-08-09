@@ -166,59 +166,45 @@ function handleSubmit($method, $path, $request, $lines) {
     return render("submit", ['name' => $name]);
 }
 
-function handleFileUpload($method, $path, $request, $lines) {
-    $uploadDir = __DIR__ . '/uploads';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+function handleUpload($method, $path, $request, $lines) {
+    $uploadsDir = __DIR__ . '/uploads';
+    if (!is_dir($uploadsDir)) {
+        mkdir($uploadsDir, 0777, true);
     }
 
     $contentLength = 0;
+    $boundary = '';
     foreach ($lines as $line) {
         if (stripos($line, "Content-Length:") === 0) {
             $contentLength = (int)trim(substr($line, 15));
-            break;
+        }
+        if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
+            if (preg_match('/boundary=(.*)$/', $line, $matches)) {
+                $boundary = trim($matches[1]);
+            }
         }
     }
 
     $bodyPos = strpos($request, "\r\n\r\n");
     $body = substr($request, $bodyPos + 4);
 
-    $boundary = "";
-    foreach ($lines as $line) {
-        if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
-            preg_match('/boundary=(.*)$/', trim($line), $matches);
-            if (isset($matches[1])) {
-                $boundary = $matches[1];
-            }
-            break;
-        }
-    }
-    if (!$boundary) {
-        return "<h1>Error: No boundary found</h1>";
-    }
-
     $parts = explode("--$boundary", $body);
     foreach ($parts as $part) {
-        if (strpos($part, 'Content-Disposition: form-data;') !== false &&
-            strpos($part, 'filename="') !== false) {
-
-            preg_match('/filename="([^"]+)"/', $part, $matches);
-            $filename = $matches[1] ?? '';
-
-            if ($filename) {
-                $fileStart = strpos($part, "\r\n\r\n") + 4;
-                $fileData = substr($part, $fileStart, -2);
-
-                $safeName = uniqid() . "_" . basename($filename);
-                file_put_contents("$uploadDir/$safeName", $fileData);
-
-                return "<h1>File uploaded successfully!</h1><p>Saved as: $safeName</p>";
+        if (strpos($part, 'Content-Disposition: form-data;') !== false) {
+            if (preg_match('/name="file"; filename="(.+?)"/', $part, $matches)) {
+                $filename = basename($matches[1]);
+                $filename = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $filename); 
+                $fileDataStart = strpos($part, "\r\n\r\n") + 4;
+                $fileData = substr($part, $fileDataStart, -2); 
+                file_put_contents("$uploadsDir/$filename", $fileData);
+                return "<h1>Upload successful!</h1><p>File saved as $filename</p>";
             }
         }
     }
 
-    return "<h1>No file uploaded</h1>";
+    return "<h1>No file uploaded.</h1>";
 }
+
 
 function handleUploadsList($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';

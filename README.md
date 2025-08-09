@@ -101,3 +101,11 @@ http://127.0.0.1:8080
 
 ---
 
+## 🧠 Notes
+
+- This is not production-grade — it’s a learning project.
+- Designed to demonstrate socket programming and web server fundamentals in PHP.
+- For production, use Apache/Nginx with PHP-FPM.
+
+---
+

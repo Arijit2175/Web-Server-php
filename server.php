@@ -220,10 +220,23 @@ function handleUpload($method, $path, $request, $lines) {
                 $fileData = substr($part, $fileStart, -2); 
 
                 $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', basename($filename));
+
                 if (strlen($fileData) > 5 * 1024 * 1024) {
                 return "<h1>Error: File too large (max 5MB)</h1>";
-            }
-                $safeName = uniqid() . "_" . $cleanName;
+                }
+
+                $timestamp = date('Ymd_His');
+                $base = pathinfo($cleanName, PATHINFO_FILENAME);
+                $ext  = pathinfo($cleanName, PATHINFO_EXTENSION);
+
+                $safeName = $base . '_' . $timestamp . ($ext !== '' ? '.' . $ext : '');
+
+                $counter = 1;
+                while (file_exists("$uploadDir/$safeName")) {
+                    $safeName = $base . '_' . $timestamp . '_' . $counter . ($ext !== '' ? '.' . $ext : '');
+                    $counter++;
+                }
+
                 file_put_contents("$uploadDir/$safeName", $fileData);
 
                 return "<h1>File uploaded successfully!</h1><p>Saved as: $safeName</p>";

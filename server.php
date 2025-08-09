@@ -22,7 +22,8 @@ $routes = [
     "GET /" => "handleHome",
     "GET /about" => "handleAboutPage",
     "POST /submit" => "handleSubmit",
-    "POST /upload" => "handleFileUpload"
+    "POST /upload" => "handleFileUpload",
+    "GET /uploads" => "handleFileUpload"
 ];
 
 $allowedExtensions = ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif'];

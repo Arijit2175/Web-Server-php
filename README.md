@@ -35,7 +35,7 @@ root/
 ├── uploads/ # Uploaded files (auto-created)
 └── logs/ # Server logs (auto-created)
       │
-      ├── server.log
+      └── server.log
 ```
 
 ---

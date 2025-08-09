@@ -90,31 +90,33 @@ while (true) {
                     $responseBody = $handler($method, $path, $data, $lines, $sock);
                 } else {
                     if (strpos($path, "/uploads/") === 0) {
-                        $filePath = realpath($uploadDir . substr($path, 8));
+    // Extract just the filename part (avoid directory traversal)
+    $fileName = basename(substr($path, 9)); // 9 skips "/uploads/"
+    $filePath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
 
-                        if ($filePath && strpos($filePath, $uploadDir) === 0 && is_file($filePath)) {
-                        $fileName = basename($filePath);
-                        $mimeType = mime_content_type($filePath);
-                        $fileSize = filesize($filePath);
-                        $fileContent = file_get_contents($filePath);
+    if (is_file($filePath)) {
+        $mimeType = mime_content_type($filePath);
+        $fileSize = filesize($filePath);
+        $fileContent = file_get_contents($filePath);
 
-                        $response  = "HTTP/1.1 200 OK\r\n";
-                        $response .= "Content-Type: $mimeType\r\n";
-                        $response .= "Content-Length: $fileSize\r\n";
-                        $response .= "Content-Disposition: attachment; filename=\"" . $fileName . "\"\r\n";
-                        $response .= "Connection: close\r\n\r\n";
-                        $response .= $fileContent;
+        $response  = "HTTP/1.1 200 OK\r\n";
+        $response .= "Content-Type: $mimeType\r\n";
+        $response .= "Content-Length: $fileSize\r\n";
+        $response .= "Content-Disposition: attachment; filename=\"" . $fileName . "\"\r\n";
+        $response .= "Connection: close\r\n\r\n";
+        $response .= $fileContent;
 
-                        socket_write($sock, $response);
-                        socket_close($sock);
-                        $index = array_search($sock, $clients);
-                        unset($clients[$index]);
-                        continue; 
-                } else {
-                    $status = "404 Not Found";
-                    $responseBody = "<h1>404 File Not Found</h1>";
-                }
-            }
+        socket_write($sock, $response);
+        socket_close($sock);
+        $index = array_search($sock, $clients);
+        unset($clients[$index]);
+        continue;
+    } else {
+        $status = "404 Not Found";
+        $responseBody = "<h1>404 File Not Found</h1>";
+    }
+}
+
                      else {
                         $publicDir = realpath(__DIR__ . "/public");
                         $requestedPath = $path === "/" ? "/index.html" : $path;

@@ -171,6 +171,7 @@ function handleUpload($method, $path, $request, $lines) {
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
+
     $contentLength = 0;
     foreach ($lines as $line) {
         if (stripos($line, "Content-Length:") === 0) {
@@ -182,11 +183,22 @@ function handleUpload($method, $path, $request, $lines) {
     $bodyPos = strpos($request, "\r\n\r\n");
     $body = substr($request, $bodyPos + 4);
 
+    $currentLength = strlen($body);
+    global $sock; 
+    while ($currentLength < $contentLength) {
+        $chunk = socket_read($sock, $contentLength - $currentLength);
+        if ($chunk === false || $chunk === '') break;
+        $body .= $chunk;
+        $currentLength = strlen($body);
+    }
+
     $boundary = "";
     foreach ($lines as $line) {
         if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
-            preg_match('/boundary=(.*)$/', $line, $matches);
-            $boundary = trim($matches[1] ?? "");
+            preg_match('/boundary=(.*)$/', trim($line), $matches);
+            if (isset($matches[1])) {
+                $boundary = $matches[1];
+            }
             break;
         }
     }
@@ -195,8 +207,6 @@ function handleUpload($method, $path, $request, $lines) {
     }
 
     $parts = explode("--$boundary", $body);
-
-    $uploaded = false;
     foreach ($parts as $part) {
         if (strpos($part, 'Content-Disposition: form-data;') !== false &&
             strpos($part, 'filename="') !== false) {
@@ -206,17 +216,19 @@ function handleUpload($method, $path, $request, $lines) {
 
             if ($filename) {
                 $fileStart = strpos($part, "\r\n\r\n") + 4;
-                $fileData = substr($part, $fileStart, -2);
+                $fileData = substr($part, $fileStart, -2); 
 
                 $safeName = uniqid() . "_" . basename($filename);
                 file_put_contents("$uploadDir/$safeName", $fileData);
-                $uploaded = true;
+
+                return "<h1>File uploaded successfully!</h1><p>Saved as: $safeName</p>";
             }
         }
     }
 
-    return $uploaded ? "<h1>File uploaded successfully!</h1>" : "<h1>No file uploaded.</h1>";
+    return "<h1>No file uploaded</h1>";
 }
+
 
 
 

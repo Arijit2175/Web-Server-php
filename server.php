@@ -203,77 +203,63 @@ function handleSubmit($method, $path, $request, $lines, $sock = null) {
     return render("submit", ['name' => $name]);
 }
 
-function handleFileUpload($method, $path, $request, $lines, $sock) {
-    $uploadDir = realpath(__DIR__ . '/uploads') ?: (__DIR__ . '/uploads');
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+function handleFileUpload($method, $path, $request, $lines) {
+    $uploadDir = __DIR__ . '/uploads';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
 
     $contentLength = 0;
-    $contentType = '';
     foreach ($lines as $line) {
-        if (stripos($line, 'Content-Length:') === 0) {
-            $contentLength = (int)trim(substr($line, strlen('Content-Length:')));
-        }
-        if (stripos($line, 'Content-Type:') === 0 && stripos($line, 'multipart/form-data') !== false) {
-            $contentType = trim(substr($line, strlen('Content-Type:')));
+        if (stripos($line, "Content-Length:") === 0) {
+            $contentLength = (int)trim(substr($line, 15));
+            break;
         }
     }
-
-    if ($contentLength <= 0) {
-        return "<h1>Bad Request: missing Content-Length</h1>";
-    }
-
-    if (!preg_match('/boundary=(.*)$/', $contentType, $m)) {
-        return "<h1>Bad Request: missing boundary</h1>";
-    }
-    $boundary = trim($m[1]);
-    if (substr($boundary, 0, 1) === '"') $boundary = trim($boundary, '"');
 
     $bodyPos = strpos($request, "\r\n\r\n");
-    if ($bodyPos === false) return "<h1>Bad Request</h1>";
     $body = substr($request, $bodyPos + 4);
 
-    $received = strlen($body);
-    while ($received < $contentLength) {
-        $chunk = @socket_read($sock, $contentLength - $received);
+    $currentLength = strlen($body);
+    global $sock; 
+    while ($currentLength < $contentLength) {
+        $chunk = socket_read($sock, $contentLength - $currentLength);
         if ($chunk === false || $chunk === '') break;
         $body .= $chunk;
-        $received = strlen($body);
+        $currentLength = strlen($body);
     }
 
-    $parts = explode("--" . $boundary, $body);
+    $boundary = "";
+    foreach ($lines as $line) {
+        if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
+            preg_match('/boundary=(.*)$/', trim($line), $matches);
+            if (isset($matches[1])) {
+                $boundary = $matches[1];
+            }
+            break;
+        }
+    }
+    if (!$boundary) {
+        return "<h1>Error: No boundary found</h1>";
+    }
+
+    $parts = explode("--$boundary", $body);
     foreach ($parts as $part) {
-        if (trim($part) === '' || $part === "--\r\n") continue;
+        if (strpos($part, 'Content-Disposition: form-data;') !== false &&
+            strpos($part, 'filename="') !== false) {
 
-        if (strpos($part, 'filename="') !== false && strpos($part, 'Content-Disposition:') !== false) {
-            if (!preg_match('/filename="([^"]*)"/', $part, $fn)) continue;
-            $originalName = basename($fn[1]);
-            if ($originalName === '') continue; 
-            $hdrEnd = strpos($part, "\r\n\r\n");
-            if ($hdrEnd === false) continue;
-            $partHeaders = substr($part, 0, $hdrEnd);
-            $fileData = substr($part, $hdrEnd + 4);
+            preg_match('/filename="([^"]+)"/', $part, $matches);
+            $filename = $matches[1] ?? '';
 
-            $fileData = preg_replace("/\r\n--\z/", '', $fileData);
-            $fileData = rtrim($fileData, "\r\n");
+            if ($filename) {
+                $fileStart = strpos($part, "\r\n\r\n") + 4;
+                $fileData = substr($part, $fileStart, -2);
 
-            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            $allowed = ['jpg','jpeg','png','gif','pdf'];
-            if (!in_array($ext, $allowed)) {
-                return "<h1>403 Forbidden - file type not allowed</h1>";
+                $safeName = uniqid() . "_" . basename($filename);
+                file_put_contents("$uploadDir/$safeName", $fileData);
+
+                return "<h1>File uploaded successfully!</h1><p>Saved as: $safeName</p>";
             }
-
-            $safeName = uniqid('upload_', true) . '.' . $ext;
-            $savePath = $uploadDir . DIRECTORY_SEPARATOR . $safeName;
-
-            $written = file_put_contents($savePath, $fileData);
-            if ($written === false) {
-                return "<h1>500 Internal Server Error - could not save file</h1>";
-            }
-
-            $safeEsc = htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8');
-            $out = "<h1>File uploaded successfully</h1>";
-            $out .= "<p>Saved as: <a href=\"/uploads/$safeEsc\">$safeEsc</a></p>";
-            return $out;
         }
     }
 

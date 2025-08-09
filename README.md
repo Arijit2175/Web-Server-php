@@ -75,3 +75,11 @@ http://127.0.0.1:8080
 
 ---
 
+## 📦 Uploads
+
+- Max file size: **5 MB**
+- Auto-renames with timestamp to avoid overwrites
+- Cleans filenames from special characters
+
+---
+

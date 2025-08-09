@@ -184,21 +184,12 @@ function handleUpload($method, $path, $request, $lines) {
     $bodyPos = strpos($request, "\r\n\r\n");
     $body = substr($request, $bodyPos + 4);
 
-    $currentLength = strlen($body);
-    global $sock; 
-    while ($currentLength < $contentLength) {
-        $chunk = socket_read($sock, $contentLength - $currentLength);
-        if ($chunk === false || $chunk === '') break;
-        $body .= $chunk;
-        $currentLength = strlen($body);
-    }
-
     $boundary = "";
     foreach ($lines as $line) {
         if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
             preg_match('/boundary=(.*)$/', trim($line), $matches);
             if (isset($matches[1])) {
-                $boundary = $matches[1];
+                $boundary = trim($matches[1], "\" \r\n");
             }
             break;
         }
@@ -217,12 +208,13 @@ function handleUpload($method, $path, $request, $lines) {
 
             if ($filename) {
                 $fileStart = strpos($part, "\r\n\r\n") + 4;
-                $fileData = substr($part, $fileStart, -2); 
+                $fileData = substr($part, $fileStart);
+                $fileData = rtrim($fileData, "\r\n");
 
                 $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', basename($filename));
                 if (strlen($fileData) > 5 * 1024 * 1024) {
-                return "<h1>Error: File too large (max 5MB)</h1>";
-            }
+                    return "<h1>Error: File too large (max 5MB)</h1>";
+                }
                 $safeName = uniqid() . "_" . $cleanName;
                 file_put_contents("$uploadDir/$safeName", $fileData);
 
@@ -233,9 +225,6 @@ function handleUpload($method, $path, $request, $lines) {
 
     return "<h1>No file uploaded</h1>";
 }
-
-
-
 
 function handleUploadsList($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';

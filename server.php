@@ -167,12 +167,11 @@ function handleSubmit($method, $path, $request, $lines) {
 }
 
 function handleUpload($method, $path, $request, $lines) {
-    $uploadsDir = __DIR__ . '/uploads';
-    if (!is_dir($uploadsDir)) {
-        mkdir($uploadsDir, 0777, true);
+    $uploadDir = __DIR__ . '/uploads';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
     }
-
-     $contentLength = 0;
+    $contentLength = 0;
     foreach ($lines as $line) {
         if (stripos($line, "Content-Length:") === 0) {
             $contentLength = (int)trim(substr($line, 15));
@@ -183,22 +182,21 @@ function handleUpload($method, $path, $request, $lines) {
     $bodyPos = strpos($request, "\r\n\r\n");
     $body = substr($request, $bodyPos + 4);
 
-    $currentLength = strlen($body);
-    global $sock; 
-    while ($currentLength < $contentLength) {
-        $chunk = socket_read($sock, $contentLength - $currentLength);
-        if ($chunk === false || $chunk === '') break;
-        $body .= $chunk;
-        $currentLength = strlen($body);
-    }
-
     $boundary = "";
     foreach ($lines as $line) {
-         return "<h1>Error: No boundary found</h1>";
+        if (stripos($line, "Content-Type: multipart/form-data;") === 0) {
+            preg_match('/boundary=(.*)$/', $line, $matches);
+            $boundary = trim($matches[1] ?? "");
+            break;
+        }
+    }
+    if (!$boundary) {
+        return "<h1>Error: No boundary found</h1>";
     }
 
     $parts = explode("--$boundary", $body);
 
+    $uploaded = false;
     foreach ($parts as $part) {
         if (strpos($part, 'Content-Disposition: form-data;') !== false &&
             strpos($part, 'filename="') !== false) {
@@ -212,12 +210,14 @@ function handleUpload($method, $path, $request, $lines) {
 
                 $safeName = uniqid() . "_" . basename($filename);
                 file_put_contents("$uploadDir/$safeName", $fileData);
+                $uploaded = true;
             }
         }
     }
 
-    return "<h1>No file uploaded.</h1>";
+    return $uploaded ? "<h1>File uploaded successfully!</h1>" : "<h1>No file uploaded.</h1>";
 }
+
 
 
 function handleUploadsList($method, $path, $request, $lines) {

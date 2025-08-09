@@ -234,9 +234,6 @@ function handleUpload($method, $path, $request, $lines) {
     return "<h1>No file uploaded</h1>";
 }
 
-
-
-
 function handleUploadsList($method, $path, $request, $lines) {
     $uploadDir = __DIR__ . '/uploads';
     if (!is_dir($uploadDir)) {

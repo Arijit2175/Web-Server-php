@@ -1,2 +1,7 @@
-# Web-Server-php-
-A web server built in php from scratch.
+# PHP Multi-Client Web Server
+
+A custom **multi-client, socket-based web server** written entirely in PHP.  
+Supports static file serving, custom routes, file uploads, and downloads.
+
+
+

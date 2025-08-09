@@ -22,7 +22,7 @@ $routes = [
     "GET /" => "handleHome",
     "GET /about" => "handleAboutPage",
     "POST /submit" => "handleSubmit",
-    "POST /upload" => "handleFileUpload",
+    "POST /upload" => "handleUpload",
     "GET /uploads" => "handleUploadsList"
 ];
 

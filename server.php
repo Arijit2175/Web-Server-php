@@ -94,6 +94,7 @@ while (true) {
                         if ($filePath && strpos($filePath, $uploadDir) === 0 && is_file($filePath)) {
                             $responseBody = file_get_contents($filePath);
                             $mimeType = mime_content_type($filePath);
+                            header("Content-Disposition: attachment; filename=\"" . basename($filePath) . "\"");
                         } else {
                             $status = "404 Not Found";
                             $responseBody = "<h1>404 File Not Found</h1>";
